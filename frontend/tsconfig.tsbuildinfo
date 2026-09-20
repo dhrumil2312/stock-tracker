@@ -1,0 +1,1 @@
+{"root":["./src/App.tsx","./src/api.ts","./src/main.tsx","./src/types.ts","./src/components/BrandMark.tsx","./src/components/ChatPanel.tsx","./src/components/MovementList.tsx","./src/components/PriceChart.tsx","./src/components/TickerPicker.tsx"],"version":"5.9.3"}
