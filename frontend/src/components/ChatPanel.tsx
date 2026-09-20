@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { fetchChatModels, sendChat } from "../api";
+import { fetchChatModels, streamChat } from "../api";
 import type { ChatMessage, ChatModelOption } from "../types";
 import ChatMarkdown from "./ChatMarkdown";
 
@@ -20,6 +20,8 @@ export default function ChatPanel({ ticker, onClose }: Props) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
+  const [status, setStatus] = useState<string | null>(null);
+  const [draft, setDraft] = useState("");
   const [models, setModels] = useState<ChatModelOption[]>([]);
   const [model, setModel] = useState(DEFAULT_MODEL);
   const endRef = useRef<HTMLDivElement>(null);
@@ -27,7 +29,7 @@ export default function ChatPanel({ ticker, onClose }: Props) {
 
   useEffect(() => {
     endRef.current?.scrollIntoView({ block: "end" });
-  }, [messages, loading]);
+  }, [messages, loading, draft, status]);
 
   useEffect(() => {
     let cancelled = false;
@@ -52,6 +54,8 @@ export default function ChatPanel({ ticker, onClose }: Props) {
   useEffect(() => {
     setMessages([]);
     setInput("");
+    setDraft("");
+    setStatus(null);
   }, [ticker]);
 
   async function ask(text: string) {
@@ -61,17 +65,32 @@ export default function ChatPanel({ ticker, onClose }: Props) {
     setMessages(next);
     setInput("");
     setLoading(true);
+    setDraft("");
+    setStatus("Thinking…");
+    let acc = "";
     try {
-      const { reply } = await sendChat({
-        ticker,
-        message: text,
-        history,
-        model: model || undefined,
-      });
-      setMessages([...next, { role: "assistant", content: reply }]);
+      await streamChat(
+        {
+          ticker,
+          message: text,
+          history,
+          model: model || undefined,
+        },
+        {
+          onStatus: (message) => setStatus(message),
+          onToken: (piece) => {
+            acc += piece;
+            setStatus(null);
+            setDraft(acc);
+          },
+        }
+      );
+      setMessages([...next, { role: "assistant", content: acc || "No reply." }]);
     } catch (err) {
       setMessages([...next, { role: "assistant", content: `Error: ${(err as Error).message}` }]);
     } finally {
+      setDraft("");
+      setStatus(null);
       setLoading(false);
     }
   }
@@ -135,7 +154,11 @@ export default function ChatPanel({ ticker, onClose }: Props) {
             )}
           </div>
         ))}
-        {loading && <div className="bubble assistant muted">Thinking…</div>}
+        {loading && (
+          <div className={`bubble assistant${draft ? "" : " muted"}`}>
+            {draft ? <ChatMarkdown text={draft} /> : status || "Thinking…"}
+          </div>
+        )}
         <div ref={endRef} />
       </div>
       <div className="chat-composer">

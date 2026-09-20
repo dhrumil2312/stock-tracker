@@ -52,7 +52,7 @@ settings = Settings()
 CHAT_MODELS: list[dict[str, str]] = [
     {"id": "deepseek/deepseek-v4.1-flash", "label": "DeepSeek v4.1 Flash", "short": "DeepSeek v4.1"},
     {"id": "google/gemini-3.6-flash", "label": "Gemini 3.6 Flash", "short": "Gemini 3.6"},
-    {"id": "anthropic/claude-3.5-haiku", "label": "Claude 3.5 Haiku", "short": "Haiku 3.5"},
+    {"id": "anthropic/claude-3-haiku", "label": "Claude 3 Haiku", "short": "Haiku 3"},
 ]
 CHAT_MODEL_IDS: frozenset[str] = frozenset(m["id"] for m in CHAT_MODELS)
 

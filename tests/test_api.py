@@ -75,10 +75,11 @@ def test_post_chat_rejects_empty_message(client) -> None:
     assert resp.status_code == 422
 
 
-def test_post_chat_rejects_missing_date(client, seed_ticker) -> None:
+def test_post_chat_allows_missing_date(client, seed_ticker) -> None:
     seed_ticker("NVDA", name="NVIDIA Corp.", bars=BARS, moves=MOVES)
     resp = client.post("/api/chat", json={"ticker": "NVDA", "message": "why?"})
-    assert resp.status_code == 422
+    assert resp.status_code == 200
+    assert resp.headers["content-type"].startswith("text/event-stream")
 
 
 def test_post_chat_rejects_unlisted_model(client, seed_ticker) -> None:
@@ -101,10 +102,11 @@ def test_post_chat_returns_fallback_reply(client, seed_ticker) -> None:
     seed_ticker("NVDA", name="NVIDIA Corp.", bars=BARS, moves=MOVES)
     resp = client.post(
         "/api/chat",
-        json={"ticker": "NVDA", "message": "why did it move?", "start": "2026-09-18"},
+        json={"ticker": "NVDA", "message": "why did it move?"},
     )
     assert resp.status_code == 200
-    body = resp.json()
-    assert body["grounded"] is False  # no OPENROUTER_API_KEY in the test env
-    assert body["reply"]
-    assert resp.headers["cache-control"] == "no-store"
+    assert resp.headers["content-type"].startswith("text/event-stream")
+    body = resp.text
+    assert "Biggest flagged move" in body
+    assert "event: done" in body
+    assert '"grounded": false' in body
