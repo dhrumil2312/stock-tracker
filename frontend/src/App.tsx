@@ -114,7 +114,6 @@ export default function App() {
   const metaBits = [data?.exchange, data?.sector, data?.industry].filter(Boolean);
   const lastBar = data?.prices.length ? data.prices[data.prices.length - 1] : undefined;
   const lastChange = lastBar?.pct_change ?? null;
-  const selectedMove = data?.movements.find((m) => m.date === selected) ?? null;
 
   return (
     <div className="shell">
